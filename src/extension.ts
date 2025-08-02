@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const rootPath = workspaceFolders[0].uri.fsPath;
 
-        // 1. Prompt for Project Name
+        // --- Step 1: Prompt for Project Name ---
         const projectName = await vscode.window.showInputBox({
             prompt: 'Enter your project name (e.g., "my-api-backend")',
             placeHolder: 'my-express-app',
@@ -25,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        // 2. Prompt for Package Manager
+        // --- Step 2: Prompt for Package Manager ---
         const packageManager = await vscode.window.showQuickPick(['npm', 'yarn'], {
             placeHolder: 'Choose your preferred package manager',
             canPickMany: false
@@ -36,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        // 3. Prompt for ES Modules vs CommonJS
+        // --- Step 3: Prompt for ES Modules vs CommonJS ---
         const moduleSystem = await vscode.window.showQuickPick(['CommonJS (require/module.exports)', 'ES Modules (import/export)'], {
             placeHolder: 'Choose your module system',
             canPickMany: false
@@ -51,6 +51,18 @@ export function activate(context: vscode.ExtensionContext) {
         const fileExtension = useESModules ? 'mjs' : 'js';
         const packageJsonType = useESModules ? '"type": "module",' : '';
 
+        // --- Prompt for Authentication ---
+        const includeAuth = await vscode.window.showQuickPick(['Yes', 'No'], {
+            placeHolder: 'Include Authentication (Email/Password with JWT)?',
+            canPickMany: false
+        });
+
+        if (includeAuth === undefined) {
+            vscode.window.showInformationMessage('Boilerplate generation cancelled. Authentication choice is required.');
+            return;
+        }
+        const withAuth = includeAuth === 'Yes';
+
         const srcPath = path.join(rootPath, 'src');
 
         const folders = [
@@ -60,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
             'src/models',
             'src/routes',
             'src/middlewares',
-            'src/utils' // Added for utilities like error handling or helper functions
+            'src/utils'
         ];
 
         const createFolders = () => {
@@ -68,60 +80,96 @@ export function activate(context: vscode.ExtensionContext) {
         };
 
         const createFiles = () => {
+            // --- app.js/app.mjs content (now exports the app) ---
             const appJsContent = useESModules ? `
 import express from 'express';
-import dotenv from 'dotenv';
-import connectDB from './config/db.${fileExtension}';
-import exampleRoute from './routes/example.route.${fileExtension}'; // Example route
-
-dotenv.config();
+import exampleRoute from './routes/example.route.${fileExtension}';
+${withAuth ? `import authRoute from './routes/auth.route.${fileExtension}';` : ''}
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-// Example route usage
+// Main routes
 app.use('/api/example', exampleRoute);
+${withAuth ? `app.use('/api/auth', authRoute);` : ''}
 
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
-connectDB();
-
-app.listen(PORT, () => {
-    console.log(\`Server is running on port \${PORT}\`);
-});
+export default app;
 `.trim() : `
 const express = require('express');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
-const exampleRoute = require('./routes/example.route'); // Example route
-
-dotenv.config();
+const exampleRoute = require('./routes/example.route');
+${withAuth ? `const authRoute = require('./routes/auth.route');` : ''}
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-// Example route usage
+// Main routes
 app.use('/api/example', exampleRoute);
+${withAuth ? `app.use('/api/auth', authRoute);` : ''}
 
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
-connectDB();
-
-app.listen(PORT, () => {
-    console.log(\`Server is running on port \${PORT}\`);
-});
+module.exports = app;
 `.trim();
-
             fs.writeFileSync(path.join(srcPath, `app.${fileExtension}`), appJsContent);
 
+            // --- NEW: server.js/server.mjs content (in root) ---
+            const serverJsContent = useESModules ? `
+import app from './src/app.${fileExtension}';
+import dotenv from 'dotenv';
+import connectDB from './src/config/db.${fileExtension}';
+
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
+
+// Connect to database
+connectDB();
+
+const server = app.listen(PORT, () => {
+    console.log(\`Server running on port \${PORT}\`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+    console.log(\`Error: \${err.message}\`);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+});
+`.trim() : `
+const app = require('./src/app');
+const dotenv = require('dotenv');
+const connectDB = require('./src/config/db');
+
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
+
+// Connect to database
+connectDB();
+
+const server = app.listen(PORT, () => {
+    console.log(\`Server running on port \${PORT}\`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+    console.log(\`Error: \${err.message}\`);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+});
+`.trim();
+            fs.writeFileSync(path.join(rootPath, `server.${fileExtension}`), serverJsContent);
+
+            // --- db.js/db.mjs content ---
+            // No change needed here, it remains in src/config and just handles the DB connection
             const dbJsContent = useESModules ? `
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -155,15 +203,17 @@ const connectDB = async () => {
 
 module.exports = connectDB;
 `.trim();
-
             fs.writeFileSync(path.join(srcPath, 'config', `db.${fileExtension}`), dbJsContent);
 
-            const envContent = `PORT=5000\nMONGO_URI=mongodb://localhost:27017/${projectName.toLowerCase().replace(/\s/g, '-')}-db`;
+            // --- .env content ---
+            const envContent = `PORT=5000\nMONGO_URI=mongodb://localhost:27017/${projectName.toLowerCase().replace(/\s/g, '-')}-db${withAuth ? `\nJWT_SECRET=YOUR_SUPER_SECRET_KEY\nJWT_EXPIRES_IN=1h` : ''}`;
             fs.writeFileSync(path.join(rootPath, '.env'), envContent);
 
-            const gitignoreContent = `node_modules/\n.env\n.vscode/`; // Added .vscode for good measure
+            // --- .gitignore content ---
+            const gitignoreContent = `node_modules/\n.env\n.vscode/\nbuild/`;
             fs.writeFileSync(path.join(rootPath, '.gitignore'), gitignoreContent);
 
+            // --- README.md content (for generated project) ---
             const readmeContent = `
 # ${projectName} - Express + MongoDB Boilerplate
 
@@ -181,6 +231,7 @@ ${packageManager === 'npm' ? 'npm run dev' : 'yarn dev'}
 
 ## 📁 Folder Structure
 
+- \`server.${fileExtension}\`: Main server entry point
 - \`src/config\`: Database configuration
 - \`src/controllers\`: Contains business logic for routes
 - \`src/models\`: Mongoose schemas and models
@@ -197,7 +248,11 @@ This boilerplate includes a basic example for a "User" resource.
 ### Model: \`src/models/User.model.${fileExtension}\`
 
 \`\`\`${useESModules ? 'js' : 'javascript'}
-${useESModules ? `import mongoose from 'mongoose';` : `const mongoose = require('mongoose');`}
+${useESModules ? `import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';` : `const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');`}
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -209,11 +264,43 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    ${withAuth ? `password: {
+        type: String,
+        required: true,
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
+    },` : ''}
     createdAt: {
         type: Date,
         default: Date.now,
     },
 });
+
+${withAuth ? `
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) {
+        next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Compare password method
+userSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate JWT token
+userSchema.methods.getSignedJwtToken = function() {
+    return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+};
+` : ''}
 
 ${useESModules ? `export default mongoose.model('User', userSchema);` : `module.exports = mongoose.model('User', userSchema);`}
 \`\`\`
@@ -234,9 +321,9 @@ ${useESModules ? `export const getAllUsers = async (req, res) => {` : `exports.g
 };
 
 ${useESModules ? `export const createUser = async (req, res) => {` : `exports.createUser = async (req, res) => {`}
-    const { name, email } = req.body;
+    const { name, email ${withAuth ? ', password' : ''} } } = req.body;
     try {
-        const newUser = new User({ name, email });
+        const newUser = new User({ name, email ${withAuth ? ', password' : ''} });
         await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
@@ -250,19 +337,90 @@ ${useESModules ? `export const createUser = async (req, res) => {` : `exports.cr
 
 \`\`\`${useESModules ? 'js' : 'javascript'}
 ${useESModules ? `import express from 'express';
-import { getAllUsers, createUser } from '../controllers/example.controller.${fileExtension}';` : `const express = require('express');
-const { getAllUsers, createUser } = require('../controllers/example.controller');`}
+import { getAllUsers, createUser } from '../controllers/example.controller.${fileExtension}';
+${withAuth ? `import { protect } from '../middlewares/auth.middleware.${fileExtension}';` : ''}` : `const express = require('express');
+const { getAllUsers, createUser } = require('../controllers/example.controller');
+${withAuth ? `const { protect } = require('../middlewares/auth.middleware');` : ''}`}
 
 const router = express.Router();
 
 router.get('/', getAllUsers);
 router.post('/', createUser);
 
+// Example of a protected route
+${withAuth ? `router.get('/protected-example', protect, (req, res) => {
+    res.json({ message: 'This is a protected route!', user: req.user });
+});` : ''}
+
 ${useESModules ? `export default router;` : `module.exports = router;`}
 \`\`\`
-`.trim();
 
+${withAuth ? `
+## 🔐 Authentication (Email/Password with JWT)
+
+If you chose to include authentication, your project is set up with:
+
+* **User Model:** Includes \`email\`, \`password\` (hashed), and \`role\` fields.
+* **Registration:** \`POST /api/auth/register\`
+* **Login:** \`POST /api/auth/login\`
+* **Token Generation:** JWTs are issued upon successful registration/login.
+* **Protected Routes:** A \`protect\` middleware to safeguard routes (e.g., \`/api/example/protected-example\`).
+
+### Authentication API Endpoints
+
+* **Register User:**
+    * \`POST /api/auth/register\`
+    * **Body:** \`{ "name": "...", "email": "...", "password": "..." }\`
+    * **Response:** JWT token and user details.
+
+* **Login User:**
+    * \`POST /api/auth/login\`
+    * **Body:** \`{ "email": "...", "password": "..." }\`
+    * **Response:** JWT token and user details.
+
+* **Access Protected Route (Example):**
+    * \`GET /api/example/protected-example\`
+    * **Headers:** \`Authorization: Bearer <YOUR_JWT_TOKEN>\`
+    * **Response:** Access granted message and user data.
+
+### Environment Variables for Auth
+
+Make sure to set these in your \`.env\` file:
+
+\`\`\`
+JWT_SECRET=YOUR_SUPER_SECRET_KEY_REPLACE_THIS
+JWT_EXPIRES_IN=1h
+\`\`\`
+` : ''}
+
+---
+
+## 🙏 Contribution & Support
+
+Found an issue or have a feature request? Feel free to open an issue or submit a pull request on our GitHub repository:
+
+* **Repository:** [https://github.com/IamNishant51/Backend-Folder-str-Generator](https://github.com/IamNishant51/Backend-Folder-str-Generator)
+* **Issues:** [https://github.com/IamNishant51/Backend-Folder-str-Generator/issues](https://github.com/IamNishant51/Backend-Folder-str-Generator/issues)
+
+## 📄 License
+
+This extension is licensed under the ISC License.
+
+---
+
+**Crafted with 💖 by Nishant Unavane — The Web Architect**
+
+---
+`.trim();
             fs.writeFileSync(path.join(rootPath, 'README.md'), readmeContent);
+
+            // --- package.json (for generated project) ---
+            let generatedPackageJsonDependencies = `"dotenv": "^16.0.3",\n\t\t"express": "^4.18.2",\n\t\t"mongoose": "^7.6.0"`;
+            let generatedPackageJsonDevDependencies = `"nodemon": "^3.0.1"`;
+
+            if (withAuth) {
+                generatedPackageJsonDependencies += `,\n\t\t"bcryptjs": "^2.4.3",\n\t\t"jsonwebtoken": "^9.0.2"`;
+            }
 
             const packageJsonContent = `
 {
@@ -270,10 +428,10 @@ ${useESModules ? `export default router;` : `module.exports = router;`}
     "version": "1.0.0",
     "description": "A modern Express.js and MongoDB backend boilerplate.",
     ${packageJsonType}
-    "main": "src/app.${fileExtension}",
+    "main": "server.${fileExtension}", // Updated to server.js/server.mjs
     "scripts": {
-        "start": "node src/app.${fileExtension}",
-        "dev": "nodemon src/app.${fileExtension}"
+        "start": "node server.${fileExtension}", // Updated
+        "dev": "nodemon server.${fileExtension}" // Updated
     },
     "keywords": [
         "express",
@@ -284,21 +442,21 @@ ${useESModules ? `export default router;` : `module.exports = router;`}
     "author": "Nishant — The Web Architect",
     "license": "ISC",
     "dependencies": {
-        "dotenv": "^16.0.3",
-        "express": "^4.18.2",
-        "mongoose": "^7.6.0"
+        ${generatedPackageJsonDependencies}
     },
     "devDependencies": {
-        "nodemon": "^3.0.1"
+        ${generatedPackageJsonDevDependencies}
     }
 }
 `.trim();
-
             fs.writeFileSync(path.join(rootPath, 'package.json'), packageJsonContent);
 
-            // Create example model, controller, route
-            const exampleModelContent = useESModules ? `
+            // --- Create example model, controller, route ---
+            // User.model.js/mjs (updated for auth) - No changes here from last version
+            const userModelContent = useESModules ? `
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -310,15 +468,49 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    ${withAuth ? `password: {
+        type: String,
+        required: true,
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
+    },` : ''}
     createdAt: {
         type: Date,
         default: Date.now,
     },
 });
+
+${withAuth ? `
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) {
+        next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Compare password method
+userSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate JWT token
+userSchema.methods.getSignedJwtToken = function() {
+    return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+};
+` : ''}
 
 export default mongoose.model('User', userSchema);
 `.trim() : `
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -330,17 +522,49 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
+    ${withAuth ? `password: {
+        type: String,
+        required: true,
+    },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user',
+    },` : ''}
     createdAt: {
         type: Date,
         default: Date.now,
     },
 });
 
+${withAuth ? `
+// Hash password before saving
+userSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) {
+        next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
+
+// Compare password method
+userSchema.methods.matchPassword = async function(enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Generate JWT token
+userSchema.methods.getSignedJwtToken = function() {
+    return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+};
+` : ''}
+
 module.exports = mongoose.model('User', userSchema);
 `.trim();
+            fs.writeFileSync(path.join(srcPath, 'models', `User.model.${fileExtension}`), userModelContent);
 
-            fs.writeFileSync(path.join(srcPath, 'models', `User.model.${fileExtension}`), exampleModelContent);
-
+            // example.controller.js/mjs - No changes here from last version
             const exampleControllerContent = useESModules ? `
 import User from '../models/User.model.${fileExtension}';
 
@@ -355,9 +579,9 @@ export const getAllUsers = async (req, res) => {
 };
 
 export const createUser = async (req, res) => {
-    const { name, email } = req.body;
+    const { name, email ${withAuth ? ', password' : ''} } = req.body;
     try {
-        const newUser = new User({ name, email });
+        const newUser = new User({ name, email ${withAuth ? ', password' : ''} });
         await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
@@ -379,9 +603,9 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-    const { name, email } = req.body;
+    const { name, email ${withAuth ? ', password' : ''} } = req.body;
     try {
-        const newUser = new User({ name, email });
+        const newUser = new User({ name, email ${withAuth ? ', password' : ''} });
         await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
@@ -392,28 +616,359 @@ exports.createUser = async (req, res) => {
 `.trim();
             fs.writeFileSync(path.join(srcPath, 'controllers', `example.controller.${fileExtension}`), exampleControllerContent);
 
+            // example.route.js/mjs - No changes here from last version
             const exampleRouteContent = useESModules ? `
 import express from 'express';
 import { getAllUsers, createUser } from '../controllers/example.controller.${fileExtension}';
+${withAuth ? `import { protect } from '../middlewares/auth.middleware.${fileExtension}';` : ''}
 
 const router = express.Router();
 
 router.get('/', getAllUsers);
 router.post('/', createUser);
+
+// Example of a protected route
+${withAuth ? `router.get('/protected-example', protect, (req, res) => {
+    res.json({ message: 'This is a protected route!', user: req.user });
+});` : ''}
 
 export default router;
 `.trim() : `
 const express = require('express');
 const { getAllUsers, createUser } = require('../controllers/example.controller');
+${withAuth ? `const { protect } = require('../middlewares/auth.middleware');` : ''}
 
 const router = express.Router();
 
 router.get('/', getAllUsers);
 router.post('/', createUser);
 
+// Example of a protected route
+${withAuth ? `router.get('/protected-example', protect, (req, res) => {
+    res.json({ message: 'This is a protected route!', user: req.user });
+});` : ''}
+
 module.exports = router;
 `.trim();
             fs.writeFileSync(path.join(srcPath, 'routes', `example.route.${fileExtension}`), exampleRouteContent);
+
+            // Auth files (if withAuth is true) - No changes here from last version
+            if (withAuth) {
+                const authControllerContent = useESModules ? `
+import User from '../models/User.model.${fileExtension}';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
+// Helper function to send JWT token
+const sendTokenResponse = (user, statusCode, res) => {
+    const token = user.getSignedJwtToken();
+    const options = {
+        expires: new Date(Date.now() + process.env.JWT_EXPIRES_IN * 24 * 60 * 60 * 1000), // Convert hours to ms
+        httpOnly: true // Prevent client-side JS from accessing token
+    };
+
+    res.status(statusCode).cookie('token', token, options).json({
+        success: true,
+        token,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    });
+};
+
+// @desc    Register user
+// @route   POST /api/auth/register
+// @access  Public
+export const register = async (req, res) => {
+    const { name, email, password, role } = req.body;
+
+    try {
+        // Create user
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role
+        });
+
+        sendTokenResponse(user, 200, res);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server Error or User Exists' });
+    }
+};
+
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
+export const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    // Validate email & password
+    if (!email || !password) {
+        return res.status(400).json({ success: false, error: 'Please enter an email and password' });
+    }
+
+    try {
+        // Check for user
+        const user = await User.findOne({ email }).select('+password'); // Select password explicitly
+
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+
+        // Check if password matches
+        const isMatch = await user.matchPassword(password);
+
+        if (!isMatch) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+
+        sendTokenResponse(user, 200, res);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+export const getMe = async (req, res) => {
+    try {
+        // req.user is set by the protect middleware
+        const user = await User.findById(req.user.id);
+        res.status(200).json({
+            success: true,
+            user
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+`.trim() : `
+const User = require('../models/User.model');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+// Helper function to send JWT token
+const sendTokenResponse = (user, statusCode, res) => {
+    const token = user.getSignedJwtToken();
+    const options = {
+        expires: new Date(Date.now() + process.env.JWT_EXPIRES_IN * 24 * 60 * 60 * 1000), // Convert hours to ms
+        httpOnly: true // Prevent client-side JS from accessing token
+    };
+
+    res.status(statusCode).cookie('token', token, options).json({
+        success: true,
+        token,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    });
+};
+
+// @desc    Register user
+// @route   POST /api/auth/register
+// @access  Public
+exports.register = async (req, res) => {
+    const { name, email, password, role } = req.body;
+
+    try {
+        // Create user
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role
+        });
+
+        sendTokenResponse(user, 200, res);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server Error or User Exists' });
+    }
+};
+
+// @desc    Login user
+// @route   POST /api/auth/login
+// @access  Public
+exports.login = async (req, res) => {
+    const { email, password } = req.body;
+
+    // Validate email & password
+    if (!email || !password) {
+        return res.status(400).json({ success: false, error: 'Please enter an email and password' });
+    }
+
+    try {
+        // Check for user
+        const user = await User.findOne({ email }).select('+password'); // Select password explicitly
+
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+
+        // Check if password matches
+        const isMatch = await user.matchPassword(password);
+
+        if (!isMatch) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+
+        sendTokenResponse(user, 200, res);
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+exports.getMe = async (req, res) => {
+    try {
+        // req.user is set by the protect middleware
+        const user = await User.findById(req.user.id);
+        res.status(200).json({
+            success: true,
+            user
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, error: 'Server Error' });
+    }
+};
+`.trim();
+                fs.writeFileSync(path.join(srcPath, 'controllers', `auth.controller.${fileExtension}`), authControllerContent);
+
+                const authRouteContent = useESModules ? `
+import express from 'express';
+import { register, login, getMe } from '../controllers/auth.controller.${fileExtension}';
+import { protect } from '../middlewares/auth.middleware.${fileExtension}';
+
+const router = express.Router();
+
+router.post('/register', register);
+router.post('/login', login);
+router.get('/me', protect, getMe);
+
+export default router;
+`.trim() : `
+const express = require('express');
+const { register, login, getMe } = require('../controllers/auth.controller');
+const { protect } = require('../middlewares/auth.middleware');
+
+const router = express.Router();
+
+router.post('/register', register);
+router.post('/login', login);
+router.get('/me', protect, getMe);
+
+module.exports = router;
+`.trim();
+                fs.writeFileSync(path.join(srcPath, 'routes', `auth.route.${fileExtension}`), authRouteContent);
+
+                const authMiddlewareContent = useESModules ? `
+import jwt from 'jsonwebtoken';
+import User from '../models/User.model.${fileExtension}';
+
+// Protect routes
+export const protect = async (req, res, next) => {
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        // Set token from Bearer token in header
+        token = req.headers.authorization.split(' ')[1];
+    }
+    // Else if using cookies, uncomment below
+    // else if (req.cookies.token) {
+    //     token = req.cookies.token;
+    // }
+
+    // Make sure token exists
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
+    }
+
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = await User.findById(decoded.id);
+
+        next();
+    } catch (err) {
+        return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
+    }
+};
+
+// Grant access to specific roles
+export const authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ success: false, error: \`User role \${req.user.role} is not authorized to access this route\` });
+        }
+        next();
+    };
+};
+`.trim() : `
+const jwt = require('jsonwebtoken');
+const User = require('../models/User.model');
+
+// Protect routes
+exports.protect = async (req, res, next) => {
+    let token;
+
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        // Set token from Bearer token in header
+        token = req.headers.authorization.split(' ')[1];
+    }
+    // Else if using cookies, uncomment below
+    // else if (req.cookies.token) {
+    //     token = req.cookies.token;
+    // }
+
+    // Make sure token exists
+    if (!token) {
+        return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
+    }
+
+    try {
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        req.user = await User.findById(decoded.id);
+
+        next();
+    } catch (err) {
+        return res.status(401).json({ success: false, error: 'Not authorized to access this route' });
+    }
+};
+
+// Grant access to specific roles
+exports.authorize = (...roles) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ success: false, error: \`User role \${req.user.role} is not authorized to access this route\` });
+        }
+        next();
+    };
+};
+`.trim();
+                fs.writeFileSync(path.join(srcPath, 'middlewares', `auth.middleware.${fileExtension}`), authMiddlewareContent);
+            }
         };
 
         try {
@@ -456,4 +1011,3 @@ module.exports = router;
 }
 
 export function deactivate() { }
-
