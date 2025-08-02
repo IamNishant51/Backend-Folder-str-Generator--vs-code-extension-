@@ -1,71 +1,57 @@
-# express-jet README
+# ExpressJet: Express & MongoDB Boilerplate Generator
 
-This is the README for your extension "express-jet". After writing up a brief description, we recommend including the following sections.
+**Crafting smooth, modern, and smart digital experiences.**
 
-## Features
+Are you tired of setting up the same Express.js and MongoDB boilerplate for every new backend project? **ExpressJet** is your flight ticket to instantly generate a robust, well-structured, and customizable backend foundation directly within VS Code! Get productive in seconds, not minutes.
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## ✨ Features & Benefits
 
-For example if there is an image subfolder under your extension project workspace:
+* **⚡️ Instant Backend Setup:** Generate a complete Express.js and MongoDB project structure in one click.
+* **⚙️ Customizable Options:** Choose your preferred package manager (npm or yarn) and module system (CommonJS or ES Modules) right at generation time.
+* **📁 Opinionated Structure:** Get a clean, scalable folder structure (`config`, `controllers`, `models`, `routes`, `middlewares`, `utils`) out-of-the-box.
+* **💡 Ready-to-use Example:** Includes a basic "User" CRUD (Create, Read) example with a model, controller, and route to kickstart your development.
+* **📦 Automated Dependency Installation:** ExpressJet automatically installs `express`, `mongoose`, `dotenv`, and `nodemon` for you.
+* **📝 Comprehensive `README.md`:** The generated project comes with its own detailed `README.md` including installation and run instructions.
+* **🚀 Boost Your Productivity:** Focus on writing actual application logic, not repetitive setup tasks. Perfect for young, growing, and learning developers eager to build interactive experiences.
 
-\!\[feature X\]\(images/feature-x.png\)
+## 🚀 Installation
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Install **ExpressJet** directly from the Visual Studio Code Marketplace:
 
-## Requirements
+1.  Open VS Code.
+2.  Go to the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X`).
+3.  Search for "ExpressJet" or "NishantUnavane".
+4.  Click the "Install" button.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+Alternatively, install it via the VS Code Marketplace website:
+[Install ExpressJet from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=NishantUnavane.express-jet) (This link will work once published!)
 
-## Extension Settings
+## ✈️ How to Use
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Using ExpressJet is incredibly simple:
 
-For example:
+1.  **Open an Empty Folder:** In VS Code, open an empty folder where you want your new Express.js backend project to be created.
+2.  **Run the Command Palette:**
+    * Press `Ctrl+Shift+P` (Windows/Linux) or `Cmd+Shift+P` (macOS) to open the Command Palette.
+3.  **Search for ExpressJet:**
+    * Type `ExpressJet` and select the command: `ExpressJet: Generate Express & MongoDB Backend`.
 
-This extension contributes the following settings:
+    ![Command Palette Screenshot - Placeholder](https://via.placeholder.com/600x150?text=Screenshot+of+Command+Palette+with+%22ExpressJet%22+Command)
+    *(**IMPORTANT:** Replace this placeholder with an actual screenshot of the Command Palette showing your extension command)*
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+4.  **Follow the Prompts:**
+    * **Project Name:** Enter a name for your new backend project (e.g., `my-cool-api`).
+    * **Package Manager:** Choose `npm` or `yarn`.
+    * **Module System:** Select `CommonJS (require/module.exports)` or `ES Modules (import/export)`.
 
-## Known Issues
+    ![Prompt 1 Screenshot - Placeholder](https://via.placeholder.com/600x150?text=Screenshot+of+Project+Name+Prompt)
+    *(**IMPORTANT:** Replace these placeholders with actual screenshots of your extension's prompts)*
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+5.  **Watch the Magic Happen:** ExpressJet will create the folder structure, boilerplate files, and automatically install dependencies in a new integrated terminal.
 
-## Release Notes
+    ![Terminal Installation Screenshot - Placeholder](https://via.placeholder.com/600x200?text=Screenshot+of+Terminal+Installing+Dependencies)
+    *(**IMPORTANT:** Replace this placeholder with an actual screenshot of the VS Code terminal showing the installation process)*
 
-Users appreciate release notes as you update your extension.
+## 📂 Generated Folder Structure
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Your new project will have a clean, logical structure ready for expansion:

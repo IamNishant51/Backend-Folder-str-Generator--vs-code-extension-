@@ -1,9 +1,14 @@
 {
   "name": "express-jet",
-  "displayName": "Express Jet",
-  "description": "Generate industry-standard Express + MongoDB folder structure and boilerplate code",
+  "displayName": "Express-Jet: Express & MongoDB Boilerplate",
+  "description": "Quickly generate Express.js and MongoDB backend boilerplate with customizable options.",
   "version": "0.0.1",
-  "publisher": "your-publisher-name",
+  "publisher": "NishantUnavane",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IamNishant51/Backend-Folder-str-Generator.git"
+  },
   "engines": {
     "vscode": "^1.102.0"
   },
