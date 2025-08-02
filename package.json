@@ -1,0 +1,41 @@
+{
+  "name": "express-jet",
+  "displayName": "Express Jet",
+  "description": "Generate industry-standard Express + MongoDB folder structure and boilerplate code",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:expressjet.createBoilerplate"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "expressjet.createBoilerplate",
+        "title": "Backend BoilerPlate"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "webpack --mode production",
+    "watch": "webpack --watch",
+    "lint": "eslint src",
+    "package": "webpack --mode production --devtool hidden-source-map"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.102.0",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.99.0",
+    "webpack-cli": "^5.1.0"
+  }
+}
