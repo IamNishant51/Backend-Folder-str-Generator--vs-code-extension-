@@ -114,25 +114,24 @@ Using ExpressJet is designed to be incredibly simple and guided:
 
 Your new project will have a clean, logical structure ready for expansion:
 
-* your-project-name/
-* ├── .env
-* ├── .gitignore
-* ├── package.json
-* ├── README.md
-* ├── server.js               # Main server entry point (or * server.mjs)
-* └── src/
-*     ├── app.js              # Express app configuration (or app.* mjs)
-*     ├── config/
-*     │   └── db.js           # MongoDB connection (or db.mjs)
-*     ├── controllers/
-*     │   ├── auth.controller.js  # User authentication logic (if * selected)
-    * │   └── example.controller.js # Example CRUD logic
-    * ├── models/
-    * │   └── User.model.js   # User schema (updated for auth if * selected)
-*     ├── routes/
-*     │   ├── auth.route.js   # Auth API routes (if selected)
-*     │   └── example.route.js # Example API routes
-*     ├── middlewares/
-*     │   └── auth.middleware.js # JWT protection middleware (if * selected)
-*     └── utils/
-*         └── ...             # For future utilities like error * handling
+your-project-name/
+├── .env
+├── .gitignore
+├── package.json
+├── README.md
+├── server.js               # Main server entry point (or server.mjs)
+└── src/
+├── app.js              # Express app configuration (or app.mjs)
+├── config/
+│   └── db.js           # MongoDB connection (or db.mjs)
+├── controllers/
+│   ├── auth.controller.js  # User authentication logic (if selected)
+│   └── example.controller.js # Example CRUD logic
+├── models/
+│   └── User.model.js   # User schema (updated for auth if selected)
+├── routes/
+│   ├── auth.route.js   # Auth API routes (if selected)
+│   └── example.route.js # Example API routes
+├── middlewares/
+│   └── auth.middleware.js # JWT protection middleware (if selected)
+└── utils/
