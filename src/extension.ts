@@ -428,10 +428,10 @@ This extension is licensed under the ISC License.
     "version": "1.0.0",
     "description": "A modern Express.js and MongoDB backend boilerplate.",
     ${packageJsonType}
-    "main": "server.${fileExtension}", // Updated to server.js/server.mjs
+    "main": "server.${fileExtension}", 
     "scripts": {
-        "start": "node server.${fileExtension}", // Updated
-        "dev": "nodemon server.${fileExtension}" // Updated
+        "start": "node server.${fileExtension}", 
+        "dev": "nodemon server.${fileExtension}" 
     },
     "keywords": [
         "express",
