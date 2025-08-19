@@ -13,11 +13,10 @@ export function activate(context: vscode.ExtensionContext) {
 
         const rootPath = workspaceFolders[0].uri.fsPath;
 
-        // --- Step 1: Prompt for Project Name ---
         const projectName = await vscode.window.showInputBox({
             prompt: 'Enter your project name (e.g., "my-api-backend")',
             placeHolder: 'my-express-app',
-            value: path.basename(rootPath) // Suggest current folder name as default
+            value: path.basename(rootPath) 
         });
 
         if (!projectName) {
@@ -25,7 +24,6 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        // --- Step 2: Prompt for Package Manager ---
         const packageManager = await vscode.window.showQuickPick(['npm', 'yarn'], {
             placeHolder: 'Choose your preferred package manager',
             canPickMany: false
@@ -36,7 +34,6 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        // --- Step 3: Prompt for ES Modules vs CommonJS ---
         const moduleSystem = await vscode.window.showQuickPick(['CommonJS (require/module.exports)', 'ES Modules (import/export)'], {
             placeHolder: 'Choose your module system',
             canPickMany: false
@@ -51,7 +48,6 @@ export function activate(context: vscode.ExtensionContext) {
         const fileExtension = useESModules ? 'mjs' : 'js';
         const packageJsonType = useESModules ? '"type": "module",' : '';
 
-        // --- Prompt for Authentication ---
         const includeAuth = await vscode.window.showQuickPick(['Yes', 'No'], {
             placeHolder: 'Include Authentication (Email/Password with JWT)?',
             canPickMany: false
@@ -80,7 +76,6 @@ export function activate(context: vscode.ExtensionContext) {
         };
 
         const createFiles = () => {
-            // --- app.js/app.mjs content (now exports the app) ---
             const appJsContent = useESModules ? `
 import express from 'express';
 import exampleRoute from './routes/example.route.${fileExtension}';
@@ -120,7 +115,6 @@ module.exports = app;
 `.trim();
             fs.writeFileSync(path.join(srcPath, `app.${fileExtension}`), appJsContent);
 
-            // --- NEW: server.js/server.mjs content (in root) ---
             const serverJsContent = useESModules ? `
 import app from './src/app.${fileExtension}';
 import dotenv from 'dotenv';
@@ -168,8 +162,7 @@ process.on('unhandledRejection', (err, promise) => {
 `.trim();
             fs.writeFileSync(path.join(rootPath, `server.${fileExtension}`), serverJsContent);
 
-            // --- db.js/db.mjs content ---
-            // No change needed here, it remains in src/config and just handles the DB connection
+       
             const dbJsContent = useESModules ? `
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -205,15 +198,12 @@ module.exports = connectDB;
 `.trim();
             fs.writeFileSync(path.join(srcPath, 'config', `db.${fileExtension}`), dbJsContent);
 
-            // --- .env content ---
             const envContent = `PORT=5000\nMONGO_URI=mongodb://localhost:27017/${projectName.toLowerCase().replace(/\s/g, '-')}-db${withAuth ? `\nJWT_SECRET=YOUR_SUPER_SECRET_KEY\nJWT_EXPIRES_IN=1h` : ''}`;
             fs.writeFileSync(path.join(rootPath, '.env'), envContent);
 
-            // --- .gitignore content ---
             const gitignoreContent = `node_modules/\n.env\n.vscode/\nbuild/`;
             fs.writeFileSync(path.join(rootPath, '.gitignore'), gitignoreContent);
 
-            // --- README.md content (for generated project) ---
             const readmeContent = `
 # ${projectName} - Express + MongoDB Boilerplate
 
@@ -414,7 +404,6 @@ This extension is licensed under the ISC License.
 `.trim();
             fs.writeFileSync(path.join(rootPath, 'README.md'), readmeContent);
 
-            // --- package.json (for generated project) ---
             let generatedPackageJsonDependencies = `"dotenv": "^16.0.3",\n\t\t"express": "^4.18.2",\n\t\t"mongoose": "^7.6.0"`;
             let generatedPackageJsonDevDependencies = `"nodemon": "^3.0.1"`;
 
@@ -451,8 +440,7 @@ This extension is licensed under the ISC License.
 `.trim();
             fs.writeFileSync(path.join(rootPath, 'package.json'), packageJsonContent);
 
-            // --- Create example model, controller, route ---
-            // User.model.js/mjs (updated for auth) - No changes here from last version
+        
             const userModelContent = useESModules ? `
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
@@ -564,7 +552,6 @@ module.exports = mongoose.model('User', userSchema);
 `.trim();
             fs.writeFileSync(path.join(srcPath, 'models', `User.model.${fileExtension}`), userModelContent);
 
-            // example.controller.js/mjs - No changes here from last version
             const exampleControllerContent = useESModules ? `
 import User from '../models/User.model.${fileExtension}';
 
@@ -616,7 +603,6 @@ exports.createUser = async (req, res) => {
 `.trim();
             fs.writeFileSync(path.join(srcPath, 'controllers', `example.controller.${fileExtension}`), exampleControllerContent);
 
-            // example.route.js/mjs - No changes here from last version
             const exampleRouteContent = useESModules ? `
 import express from 'express';
 import { getAllUsers, createUser } from '../controllers/example.controller.${fileExtension}';
@@ -652,7 +638,6 @@ module.exports = router;
 `.trim();
             fs.writeFileSync(path.join(srcPath, 'routes', `example.route.${fileExtension}`), exampleRouteContent);
 
-            // Auth files (if withAuth is true) - No changes here from last version
             if (withAuth) {
                 const authControllerContent = useESModules ? `
 import User from '../models/User.model.${fileExtension}';
@@ -976,15 +961,13 @@ exports.authorize = (...roles) => {
             createFiles();
             vscode.window.showInformationMessage(`✅ Express backend boilerplate for "${projectName}" generated!`);
 
-            // Install dependencies
             const terminal = vscode.window.createTerminal(`Install Dependencies (${packageManager})`);
             terminal.show();
             terminal.sendText(`${packageManager} install`);
-            terminal.sendText(`exit`); // Close terminal after command
+            terminal.sendText(`exit`);
 
             vscode.window.showInformationMessage(`Dependencies are being installed with ${packageManager}.`);
 
-            // Suggest next steps
             const openReadme = 'Open README.md';
             const showExplorer = 'Show in Explorer';
             vscode.window.showInformationMessage(
@@ -1002,7 +985,7 @@ exports.authorize = (...roles) => {
             });
 
 
-        } catch (err: any) { // Type 'any' for error to access message property
+        } catch (err: any) { 
             vscode.window.showErrorMessage(`❌ Error creating boilerplate: ${err.message}`);
         }
     });

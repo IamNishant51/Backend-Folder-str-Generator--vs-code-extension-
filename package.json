@@ -2,7 +2,7 @@
   "name": "express-jet",
   "displayName": "Express-Jet: Express & MongoDB Boilerplate",
   "description": "Quickly generate Express.js and MongoDB backend boilerplate with customizable options.",
-  "version": "0.0.3",
+  "version": "1.1.0",
   "publisher": "NishantUnavane",
   "icon": "icon.png",
   "repository": {
