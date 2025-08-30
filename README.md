@@ -91,8 +91,6 @@ If you find this extension helpful, please consider:
 
 ---
 
-Made with ❤️ by Nishant Unavane
-
 Are you tired of setting up the same Express.js and MongoDB boilerplate for every new backend project? **ExpressJet** is your flight ticket to instantly generate a robust, well-structured, and customizable backend foundation directly within VS Code! Get productive in seconds, not minutes, and focus on building the interactive experiences you love.
 
 ## 📂 Generated Folder Structure
@@ -120,3 +118,6 @@ Your new project will have a clean, logical structure ready for expansion:
   * ├── middlewares/
   * │   └── auth.middleware.js # JWT protection   * middleware (if selected)
   * └── utils/
+---
+
+Made with ❤️ by Nishant Unavane
