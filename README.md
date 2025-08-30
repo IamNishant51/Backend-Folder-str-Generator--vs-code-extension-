@@ -16,18 +16,83 @@ A VS Code extension that automatically generates a standardized folder structure
 
 ## Project Structure 📁
 
-The extension generates the following folder structure:
-## 🚀 Installation
+## Installation 📥
 
-Install **ExpressJet** directly from the Visual Studio Code Marketplace:
-
-1.  Open VS Code.
-2.  Go to the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X`).
-3.  Search for "ExpressJet" or "NishantUnavane".
-4.  Click the "Install" button.
+1. Open Visual Studio Code
+2. Navigate to Extensions (Ctrl+Shift+X)
+3. Search for "Backend Folder Structure Generator"
+4. Click Install
+5. Reload VS Code when prompted
 
 Alternatively, install it via the VS Code Marketplace website:
 [Install ExpressJet from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=NishantUnavane.express-jet) (This link will work once published!)
+
+## Usage 🚀
+
+1. Open VS Code Command Palette (Ctrl+Shift+P)
+2. Type "Generate Backend Structure"
+3. Select the desired location for your project
+4. The extension will automatically create the folder structure and necessary files
+
+## Generated Files 📋
+
+- **server.js**: Express server setup with basic configuration
+- **config/db.js**: MongoDB connection configuration
+- **.env**: Environment variables template
+- Basic folder structure for MVC architecture
+
+## Requirements 🛠️
+
+- Visual Studio Code 1.60.0 or higher
+- Node.js and npm installed
+- Basic understanding of Express.js and MongoDB
+
+## Configuration ⚙️
+
+The extension creates a default configuration that you can modify according to your needs:
+- MongoDB connection string in `.env`
+- Server port settings
+- Basic middleware setup
+
+## Benefits 💪
+
+- **Consistency**: Maintains uniform project structure across teams
+- **Efficiency**: Reduces setup time significantly
+- **Best Practices**: Implements proven architectural patterns
+- **Flexibility**: Easy to customize generated structure
+
+## Contributing 🤝
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Author ✍️
+
+Nishant Unavane
+- GitHub: [@IamNishant51](https://github.com/IamNishant51)
+- Email: anonymouslucifer400@gmail.com
+
+## License 📄
+
+This project is licensed under the ISC License - see the LICENSE file for details.
+
+## Support 🌟
+
+If you find this extension helpful, please consider:
+- Star the repository
+- Sharing it with others
+- Providing feedback and suggestions
+- Contributing to its development
+
+---
+
+Made with ❤️ by Nishant Unavane
+
 
 
 **Crafting smooth, modern, and smart digital experiences.**
