@@ -1,10 +1,13 @@
 # ExpressJet: Express & MongoDB Boilerplate Generator 
 
-A VS Code extension that automatically generates a standardized folder structure for backend projects with Express.js and MongoDB, including boilerplate code setup.
-
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](https://opensource.org/licenses/ISC)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
 ![VS Code](https://img.shields.io/badge/Visual_Studio_Code-0078D4?style=flat&logo=visual-studio-code&logoColor=white)
+
+---
+
+A VS Code extension that automatically generates a standardized folder structure for backend projects with Express.js and MongoDB, including boilerplate code setup.
+
 
 ## Features ⚡
 
